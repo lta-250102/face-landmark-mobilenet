@@ -1,2 +1,3 @@
 _target_: src.models.face_module.FaceModule
 n_classes: 136
+lr: 1e-4
