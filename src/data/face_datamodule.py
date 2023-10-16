@@ -11,36 +11,33 @@ import numpy as np
 
 
 class FaceDataset(Dataset):
-    class RawRecord:
-        image: Image
-        width: int
-        height: int
-        box_top: int
-        box_left: int
-        box_width: int
-        box_height: int
-        landmarks: list[int]
-
     def __init__(self, path, data_dir: str) -> None:
         super().__init__()
         self.images = ET.parse(path).getroot()[2]
         self.data_dir = data_dir
-
-        self.transforms = A.Compose([
-            A.Resize(244, 244),
-            A.Normalize(),
-            ToTensorV2(),
-        ], keypoint_params=A.KeypointParams(format='xy'))
         
     def __len__(self) -> int:
         return len(self.images)
 
     def __getitem__(self, index: int) -> Any:
         data = self.images[index]
+        true_width = int(data.attrib['width'])
+        true_height = int(data.attrib['height'])
+        left = int(data[0].attrib['left'])
+        top = int(data[0].attrib['top'])
+        width = int(data[0].attrib['width'])
+        height = int(data[0].attrib['height'])
+        transforms = A.Compose([
+            A.Crop(x_min=max(0, left), y_min=max(0, top), x_max=min(left + width, true_width), 
+                   y_max=min(top + height, true_height)),
+            A.Resize(244, 244),
+            A.Normalize(),
+            ToTensorV2(),
+        ], keypoint_params=A.KeypointParams(format='xy', remove_invisible=False))
         landmarks = []
         for landmark in data[0]:
             landmarks.append((float(landmark.attrib['x']), float(landmark.attrib['y'])))
-        transformed = self.transforms(
+        transformed = transforms(
             image=np.array(Image.open(self.data_dir + data.attrib['file']).convert('RGB')), 
             keypoints=landmarks)
         image = transformed['image']

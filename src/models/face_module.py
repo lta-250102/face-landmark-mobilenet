@@ -40,7 +40,7 @@ class FaceModule(LightningModule):
         logits = self.forward(x)
         loss = self.criterion(logits, y)
         self.train_loss(loss)
-        self.log("train_loss", loss, on_step=True, on_epoch=False, prog_bar=True)
+        self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
         return loss
 
     def validation_step(self, batch: Tuple[torch.Tensor, torch.Tensor], batch_idx: int) -> torch.Tensor:
@@ -48,7 +48,7 @@ class FaceModule(LightningModule):
         logits = self.forward(x)
         loss = self.criterion(logits, y)
         self.val_loss(loss)
-        self.log("val_loss", loss, on_step=True, on_epoch=False, prog_bar=True)
+        self.log("val_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
         return loss
 
     def test_step(self, batch: Tuple[torch.Tensor, torch.Tensor], batch_idx: int) -> torch.Tensor:
@@ -56,7 +56,7 @@ class FaceModule(LightningModule):
         logits = self.forward(x)
         loss = self.criterion(logits, y)
         self.test_loss(loss)
-        self.log("test_loss", loss, on_step=True, on_epoch=False, prog_bar=True)
+        self.log("test_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
         return loss
     
     def predict_step(self, img: Image) -> Any:
