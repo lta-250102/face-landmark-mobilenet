@@ -59,16 +59,23 @@ class FaceModule(LightningModule):
         self.log("test_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
         return loss
     
-    def predict_step(self, img: Image) -> Any:
+    def predict_step(self, img: Image, faces) -> Any:
+        images = []
         t = A.Compose([
             A.Resize(244, 244),
             A.Normalize(),
             ToTensorV2(),
         ])
-        transformed = t(image=np.array(img))
-        image = transformed['image']
-        logits = self.forward(image.unsqueeze(0))
-        return logits.squeeze(0)
+        for (x, y, w, h) in faces:
+            img = img.crop((x, y, x + w, y + h))
+            transformed = t(image=np.array(img))
+            image = transformed['image']
+            images.append(image)
+        images = torch.stack(images)
+        image = image.to(self.device)
+        logits = self.forward(image)
+        # logits = logits.cpu().detach().numpy().reshape(-1, 68, 2)
+        return logits
     
     def on_validation_epoch_end(self) -> None:
         acc = self.val_loss.compute()  # get current val loss
