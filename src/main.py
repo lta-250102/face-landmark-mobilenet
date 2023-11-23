@@ -2,7 +2,7 @@ import cv2
 from models.face_module import FaceModule
 
 
-model_path = "../logs/train/runs/2023-11-19_16-50-19/checkpoints/epoch_006.ckpt"
+model_path = "./logs/train/runs/2023-11-20_14-56-15/checkpoints/epoch_009.ckpt"
 model = FaceModule.load_from_checkpoint(model_path)
 faceCascade = cv2.CascadeClassifier('./haarcascade_frontalface_default.xml')
 cap = cv2.VideoCapture(0)

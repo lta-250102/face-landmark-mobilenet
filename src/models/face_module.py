@@ -6,14 +6,22 @@ from lightning import LightningModule
 from PIL import Image
 import albumentations as A
 import numpy as np
+from torchvision.models import mobilenet_v2
 
 
 class FaceModule(LightningModule):
     def __init__(self, n_classes: int = 136, lr: float = 1e-4) -> None:
         super().__init__()
         self.save_hyperparameters(logger=False)
-        self.net = torch.hub.load('pytorch/vision:v0.9.0', 'mobilenet_v2', pretrained=True)
-        self.net.classifier = torch.nn.Linear(1280, self.hparams.n_classes)
+        # self.net = torch.hub.load('pytorch/vision:v0.9.0', 'mobilenet_v2', pretrained=True)
+        self.net = mobilenet_v2(pretrained=True)
+
+        # Freeze all layers except the last two
+        for param in self.net.features.parameters():
+            param.requires_grad = False
+
+        # Replace last layer
+        self.net.classifier[1] = torch.nn.Linear(self.net.classifier[1].in_features, self.hparams.n_classes)
         self.criterion = torch.nn.MSELoss()
 
          # for averaging loss across batches
@@ -59,18 +67,18 @@ class FaceModule(LightningModule):
         self.log("test_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
         return loss
     
-    def predict_step(self, img: Image, faces) -> Any:
+    def predict_step(self, img: Image) -> Any:
         images = []
         t = A.Compose([
-            A.Resize(244, 244),
+            A.Resize(224, 224),
             A.Normalize(),
             ToTensorV2(),
         ])
-        for (x, y, w, h) in faces:
-            img = img.crop((x, y, x + w, y + h))
-            transformed = t(image=np.array(img))
-            image = transformed['image']
-            images.append(image)
+        # for (x, y, w, h) in faces:
+        #     img = img.crop((x, y, x + w, y + h))
+        transformed = t(image=np.array(img))
+        #     image = transformed['image']
+        images.append(image)
         images = torch.stack(images)
         image = image.to(self.device)
         logits = self.forward(image)
